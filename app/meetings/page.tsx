@@ -108,7 +108,7 @@ export default async function MeetingsPage({ searchParams }: PageProps<"/meeting
               {allDecisions
                 .filter((d) => d.meetingId === selected.id)
                 .map((d) => (
-                  <li key={d.id} className="group flex items-start gap-2 py-1">
+                  <li key={d.id} className="flex items-start gap-2 py-1">
                     <span aria-hidden className="text-[var(--tag-green)]">✓</span>
                     <span className="flex-1">{d.text}</span>
                     <span className="text-xs text-text3">{nameOf(d.createdBy)}</span>
@@ -146,10 +146,13 @@ export default async function MeetingsPage({ searchParams }: PageProps<"/meeting
         ) : (
           <ul className="border-t border-border">
             {allDecisions.map((d) => (
-              <li key={d.id} className="grid grid-cols-1 gap-x-4 border-b border-border px-2 py-2 sm:grid-cols-[minmax(0,1fr)_220px]">
+              <li key={d.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-4 border-b border-border px-2 py-2 sm:grid-cols-[minmax(0,1fr)_220px_auto]">
                 <span>{d.text}</span>
-                <span className="text-sm text-text2 sm:text-right">
+                <span className="col-start-1 row-start-2 text-sm text-text2 sm:col-start-auto sm:row-start-auto sm:text-right">
                   {meetingTitle(d.meetingId) ?? "Без зустрічі"} · {nameOf(d.createdBy)} · {relTime(d.createdAt)}
+                </span>
+                <span className="col-start-2 row-span-2 row-start-1 sm:col-start-auto sm:row-span-1 sm:row-start-auto">
+                  <DeleteDecision id={d.id} />
                 </span>
               </li>
             ))}

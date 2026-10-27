@@ -12,6 +12,7 @@ import {
 } from "@/app/actions/meetings";
 import { MEETING_KINDS, MEETING_KIND_LABEL } from "@/lib/labels";
 import { DocEditor } from "@/components/DocEditor";
+import { useToast } from "@/components/Toast";
 
 export function MeetingNotes({ id, notes }: { id: number; notes: unknown }) {
   return (
@@ -57,18 +58,26 @@ export function AddDecision({ meetingId }: { meetingId: number | null }) {
 
 export function DeleteDecision({ id }: { id: number }) {
   const router = useRouter();
-  const [, start] = useTransition();
+  const toast = useToast();
+  const [pending, start] = useTransition();
   return (
     <button
       type="button"
       aria-label="Видалити рішення"
-      className="text-text3 opacity-0 hover:text-danger focus:opacity-100 group-hover:opacity-100"
-      onClick={() =>
+      title="Видалити рішення"
+      disabled={pending}
+      className="inline-flex size-6 shrink-0 items-center justify-center rounded text-text3 hover:bg-hover hover:text-danger disabled:opacity-50"
+      onClick={() => {
+        if (!window.confirm("Видалити це рішення? Це не можна скасувати.")) return;
         start(async () => {
-          await deleteDecision(id);
-          router.refresh();
-        })
-      }
+          try {
+            await deleteDecision(id);
+            router.refresh();
+          } catch (err) {
+            toast((err as Error).message || "Не вдалося видалити рішення.", "error");
+          }
+        });
+      }}
     >
       ✕
     </button>
@@ -123,6 +132,7 @@ export function MeetingEditor({ initial, onDone }: { initial?: MeetingDraft; onD
               </option>
             ))}
           </select>
+          <span className="text-xs text-text3">Для синку кожен автоматично отримує звіт, який треба здати за 2 год до початку.</span>
         </label>
       </div>
       <label className="flex flex-col gap-1">
