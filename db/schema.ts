@@ -112,15 +112,21 @@ export const reports = pgTable(
     memberId: integer()
       .notNull()
       .references(() => members.id, { onDelete: "cascade" }),
-    date: date({ mode: "string" }).notNull(),
+    // The sync meeting this report is for; it is due 2 hours before the sync starts.
+    meetingId: integer().references(() => meetings.id, { onDelete: "set null" }),
+    date: date({ mode: "string" }).notNull(), // Kyiv date of the sync
     done: text().notNull().default(""),
     next: text().notNull().default(""),
     blockers: text().notNull().default(""),
     status: text().notNull().default("on_track"), // 'on_track' | 'at_risk' | 'blocked'
+    links: jsonb().$type<ReportLink[]>().notNull().default([]),
     createdAt: ts().notNull().defaultNow(),
+    updatedAt: ts().notNull().defaultNow(),
   },
-  (t) => [uniqueIndex("reports_member_date").on(t.memberId, t.date)],
+  (t) => [uniqueIndex("reports_member_meeting").on(t.memberId, t.meetingId)],
 );
+
+export type ReportLink = { url: string; title: string; kind: "link" | "file" };
 
 export const meetings = pgTable("meetings", {
   id: serial().primaryKey(),

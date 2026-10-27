@@ -2,10 +2,13 @@ import Link from "next/link";
 import { asc, desc, eq, gte } from "drizzle-orm";
 import { db } from "@/db";
 import { meetings, phases, reports, resources } from "@/db/schema";
-import { addDaysStr, daysToPitch, fmtDateTime, fmtDay, fmtDayLong, kyivToday, nowMs } from "@/lib/dates";
+import { addDaysStr, daysToPitch, fmtDateTime, fmtDay, fmtDayLong, kyivToday, nowMs, relTime } from "@/lib/dates";
 import { REPORT_STATUS_COLOR, REPORT_STATUS_LABEL, type ReportStatus } from "@/lib/labels";
 import { currentPhase } from "@/lib/phase";
 import { getDirections, getMembers } from "@/lib/queries";
+import { getReportSlots } from "@/lib/reports";
+import { currentSlot } from "@/lib/reportSlots";
+import { getCurrentMember } from "@/lib/session";
 import { byDue, getCardTasks } from "@/lib/tasks";
 import { plural, shortName } from "@/lib/names";
 import { AutoRefresh } from "@/components/AutoRefresh";
@@ -16,21 +19,27 @@ import { Dot, Empty, Tag } from "@/components/Tag";
 
 export default async function HomePage() {
   const today = kyivToday();
-  const [members, dirs, tasks, phaseRows, todaysReports, recentReports, nextMeetings, productLinks] =
+  const now = new Date(nowMs());
+  const [me, members, dirs, tasks, phaseRows, slotReports, recentReports, nextMeetings, productLinks, slots] =
     await Promise.all([
+      getCurrentMember(),
       getMembers(),
       getDirections(),
       getCardTasks(),
       db.select().from(phases),
-      db.select().from(reports).where(eq(reports.date, today)),
+      db.select({ memberId: reports.memberId, meetingId: reports.meetingId, status: reports.status }).from(reports),
       db.select().from(reports).where(gte(reports.date, addDaysStr(today, -14))).orderBy(desc(reports.date)),
       db.select().from(meetings).where(gte(meetings.startsAt, new Date(nowMs() - 30 * 60_000))).orderBy(asc(meetings.startsAt)).limit(1),
       db.select().from(resources).where(eq(resources.category, "product")).orderBy(asc(resources.sortOrder)),
+      getReportSlots(),
     ]);
 
   const phase = currentPhase(phaseRows, today);
   const days = daysToPitch(today);
-  const reportedBy = new Map(todaysReports.map((r) => [r.memberId, r]));
+  const slot = currentSlot(slots, now);
+  const reportedBy = new Map(slotReports.filter((r) => r.meetingId === slot?.meetingId).map((r) => [r.memberId, r]));
+  const myFilled = new Set(slotReports.filter((r) => r.memberId === me?.id).map((r) => r.meetingId));
+  const myOverdue = slots.filter((s) => s.dueAt <= now && !myFilled.has(s.meetingId)).length;
   const latestReportOf = (memberId: number | null) => recentReports.find((r) => r.memberId === memberId);
   const memberName = (id: number | null) => members.find((m) => m.id === id)?.name ?? null;
   const nextMeeting = nextMeetings[0];
@@ -91,33 +100,49 @@ export default async function HomePage() {
         <HomeKanban tasks={tasks} today={today} weekAgo={new Date(nowMs() - 7 * 864e5).toISOString()} />
       </section>
 
-      <section aria-labelledby="reports-today">
-        <div className="mb-3 flex items-baseline gap-3">
-          <h2 id="reports-today" className="section-title">
-            Звіти за сьогодні
+      <section aria-labelledby="reports-next">
+        <div className="mb-3 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+          <h2 id="reports-next" className="section-title">
+            {slot ? <span className="capitalize">Звіти до синку · {fmtDateTime(slot.startsAt)}</span> : "Звіти"}
           </h2>
+          {slot && (
+            <span className={`text-sm ${slot.dueAt <= now ? "text-danger" : "text-text2"}`}>
+              Дедлайн {relTime(slot.dueAt)}
+            </span>
+          )}
           <Link href="/reports" className="link text-sm">
-            Написати мій звіт
+            {me && slot && !myFilled.has(slot.meetingId) ? "Здати мій звіт" : "Усі звіти"}
           </Link>
         </div>
-        <ul className="flex flex-wrap gap-1.5">
-          {members.map((m) => {
-            const r = reportedBy.get(m.id);
-            const st = r?.status as ReportStatus | undefined;
-            return (
-              <li key={m.id}>
-                <span
-                  className={`tag h-7 gap-1.5 px-2.5 text-[13px] ${r ? "tag-green" : "tag-gray"}`}
-                  title={r ? `Звіт є · ${REPORT_STATUS_LABEL[st!]}` : "Ще без звіту"}
-                >
-                  {r ? <Dot color={st === "on_track" ? "green" : st === "at_risk" ? "yellow" : "red"} /> : <Dot color="gray" />}
-                  {m.name}
-                </span>
-              </li>
-            );
-          })}
-        </ul>
-        {todaysReports.length === 0 && <Empty>Сьогодні звітів ще немає. Напишіть свій.</Empty>}
+        {myOverdue > 0 && (
+          <p className="mb-2 text-danger">
+            ⚠️ У вас {myOverdue} {plural(myOverdue, "незданий звіт", "нездані звіти", "незданих звітів")}.{" "}
+            <Link href="/reports" className="underline">
+              Здати
+            </Link>
+          </p>
+        )}
+        {slot ? (
+          <ul className="flex flex-wrap gap-1.5">
+            {members.map((m) => {
+              const r = reportedBy.get(m.id);
+              const st = r?.status as ReportStatus | undefined;
+              return (
+                <li key={m.id}>
+                  <span
+                    className={`tag h-7 gap-1.5 px-2.5 text-[13px] ${r ? "tag-green" : "tag-gray"}`}
+                    title={r ? `Звіт є · ${REPORT_STATUS_LABEL[st!]}` : "Ще без звіту"}
+                  >
+                    <Dot color={r ? REPORT_STATUS_COLOR[st!] : "gray"} />
+                    {m.name}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        ) : (
+          <Empty>Наступних синків немає.</Empty>
+        )}
       </section>
 
       <section aria-labelledby="dirs">

@@ -119,6 +119,7 @@ export function DictationField({
   multiline = false,
   placeholder,
   id,
+  name,
   required = false,
   invalid = false,
 }: {
@@ -128,11 +129,13 @@ export function DictationField({
   multiline?: boolean;
   placeholder?: string;
   id?: string;
+  name?: string;
   required?: boolean;
   invalid?: boolean;
 }) {
   const field = {
     id,
+    name,
     value,
     placeholder,
     "aria-label": label,

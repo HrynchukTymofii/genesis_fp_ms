@@ -174,12 +174,12 @@ export default async function DirectionPage({ params }: PageProps<"/directions/[
             {ownerReports.map((r) => (
               <li key={r.id} className="card px-3 py-2">
                 <div className="mb-1 flex items-center gap-2 text-text2">
-                  <span className="capitalize">{fmtDayLong(r.date)}</span>
+                  <span className="capitalize">До синку · {fmtDayLong(r.date)}</span>
                   <Tag color={REPORT_STATUS_COLOR[r.status as ReportStatus]}>
                     {REPORT_STATUS_LABEL[r.status as ReportStatus]}
                   </Tag>
                 </div>
-                <ReportBody done={r.done} next={r.next} blockers={r.blockers} />
+                <ReportBody done={r.done} next={r.next} blockers={r.blockers} links={r.links} />
               </li>
             ))}
           </ul>
