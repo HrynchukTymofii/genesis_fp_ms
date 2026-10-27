@@ -1,0 +1,1 @@
+ALTER TABLE "directions" ADD COLUMN "swap_suggestion" boolean DEFAULT false NOT NULL;
