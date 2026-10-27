@@ -1,13 +1,16 @@
 "use client";
 
 import { useActionState } from "react";
+import { useSearchParams } from "next/navigation";
 import { unlock } from "@/app/actions/member";
 
 export default function UnlockPage() {
   const [state, action, pending] = useActionState(unlock, {});
+  const next = useSearchParams().get("next") ?? "/";
   return (
     <main className="flex min-h-dvh items-center justify-center bg-bg px-4">
       <form action={action} className="w-full max-w-sm">
+        <input type="hidden" name="next" value={next} />
         <div className="mb-1 text-text2">Спринт фінального проєкту</div>
         <h1 className="page-title mb-6">Код команди</h1>
         <label className="flex flex-col gap-1">

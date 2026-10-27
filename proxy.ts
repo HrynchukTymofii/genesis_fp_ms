@@ -7,9 +7,11 @@ export async function proxy(request: NextRequest) {
   if (request.nextUrl.pathname.startsWith("/unlock")) return NextResponse.next();
   if (await isUnlocked(request.cookies.get(UNLOCK_COOKIE)?.value)) return NextResponse.next();
 
+  // Remember where the person was going (e.g. a shared /form link).
   const url = request.nextUrl.clone();
+  const target = request.nextUrl.pathname + request.nextUrl.search;
   url.pathname = "/unlock";
-  url.search = "";
+  url.search = target === "/" ? "" : `?next=${encodeURIComponent(target)}`;
   return NextResponse.redirect(url);
 }
 

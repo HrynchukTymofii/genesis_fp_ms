@@ -6,7 +6,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { members } from "@/db/schema";
 import { MEMBER_COOKIE } from "@/lib/session";
-import { isUnlocked, passcodeToken, UNLOCK_COOKIE } from "@/lib/passcode";
+import { isUnlocked, passcodeToken, safeNext, UNLOCK_COOKIE } from "@/lib/passcode";
 
 const HALF_YEAR = 60 * 60 * 24 * 180;
 
@@ -35,7 +35,8 @@ export async function setTheme(theme: "light" | "dark" | "system") {
 export async function unlock(_: unknown, formData: FormData): Promise<{ error?: string }> {
   const passcode = process.env.TEAM_PASSCODE;
   const given = String(formData.get("passcode") ?? "");
-  if (!passcode) redirect("/");
+  const next = safeNext(formData.get("next"));
+  if (!passcode) redirect(next);
   if (given !== passcode) return { error: "Неправильний код. Спробуйте ще раз." };
   (await cookies()).set(UNLOCK_COOKIE, await passcodeToken(passcode), {
     httpOnly: true,
@@ -44,5 +45,5 @@ export async function unlock(_: unknown, formData: FormData): Promise<{ error?: 
     maxAge: HALF_YEAR,
     path: "/",
   });
-  redirect("/");
+  redirect(next);
 }

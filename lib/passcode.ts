@@ -7,6 +7,13 @@ export async function passcodeToken(passcode: string): Promise<string> {
   return Array.from(new Uint8Array(hash), (b) => b.toString(16).padStart(2, "0")).join("");
 }
 
+/** Only allow redirects to paths inside this site ("/form", not "//evil.com"). */
+export function safeNext(next: unknown): string {
+  return typeof next === "string" && next.startsWith("/") && !next.startsWith("//") && !next.startsWith("/unlock")
+    ? next
+    : "/";
+}
+
 /** True when no passcode is configured, or the cookie carries the right token. */
 export async function isUnlocked(cookieValue: string | undefined): Promise<boolean> {
   const passcode = process.env.TEAM_PASSCODE;
