@@ -16,7 +16,8 @@ const PAGES_BOTTOM = [
   { href: "/reports", label: "Звіти", emoji: "📝" },
   { href: "/meetings", label: "Зустрічі", emoji: "📅" },
   { href: "/resources", label: "Ресурси", emoji: "📚" },
-  { href: "/form", label: "Анкета команди", emoji: "📋" },
+  // Hidden: everyone has filled it in. The page still works at /form. Uncomment to show it again.
+  // { href: "/form", label: "Анкета команди", emoji: "📋" },
   { href: "/roles", label: "Ролі", emoji: "🧩", leadOnly: true },
   // Hidden for now; the page still works at /vote. Uncomment to show it again.
   // { href: "/vote", label: "Голосування за ідею", emoji: "🗳" },

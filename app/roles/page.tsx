@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { desc, eq } from "drizzle-orm";
+import { desc } from "drizzle-orm";
 import { db } from "@/db";
 import { formResponses, interests } from "@/db/schema";
 import { PRESENT_OPTIONS } from "@/lib/labels";
@@ -24,14 +24,18 @@ function heat(score: number | undefined) {
 export default async function RolesPage() {
   const me = (await getCurrentMember())!;
   if (!me.isLead) notFound(); // Roles are visible to the lead only
-  const [members, dirs, responses, { result, scores, swapped }, mvpInterest] = await Promise.all([
+  const [members, dirs, responses, { result, scores, swapped }, allInterests] = await Promise.all([
     getMembers(),
     getDirections(),
     db.select().from(formResponses),
     computeSuggestion(),
-    db.select().from(interests).where(eq(interests.directionSlug, "mvp")).orderBy(desc(interests.score)),
+    db.select().from(interests).orderBy(desc(interests.score)),
   ]);
-  const mvpHelpers = mvpInterest.filter((i) => i.memberId !== me.id);
+  const mvpHelpers = allInterests.filter((i) => i.directionSlug === "mvp" && i.memberId !== me.id);
+  // What people wrote about each direction (the note is required for scores 8–10). MVP has its own section below.
+  const notesByDir = dirs
+    .filter((d) => d.slug !== "mvp")
+    .map((d) => ({ dir: d, notes: allInterests.filter((i) => i.directionSlug === d.slug && i.note?.trim()) }));
   const nameOf = (id: number | null) => members.find((m) => m.id === id)?.name ?? "—";
   const respOf = (id: number) => responses.find((r) => r.memberId === id);
   const presentLabel = (v: string | null | undefined) => PRESENT_OPTIONS.find((o) => o.value === v)?.label ?? "—";
@@ -102,6 +106,37 @@ export default async function RolesPage() {
               })}
             </tbody>
           </table>
+        </div>
+      </section>
+
+      <section aria-labelledby="notes">
+        <h2 id="notes" className="section-title mb-1">
+          Що кожен вміє в напрямах
+        </h2>
+        <p className="mb-3 text-text2">З анкети: пояснення до оцінок (обов’язкові для 8–10), від найвищої оцінки.</p>
+        <div className="flex flex-col gap-6">
+          {notesByDir.map(({ dir, notes }) => (
+            <div key={dir.slug}>
+              <h3 className="mb-1 font-medium">
+                {dir.emoji} {dir.name}
+              </h3>
+              {notes.length === 0 ? (
+                <p className="text-text3">Ніхто нічого не написав.</p>
+              ) : (
+                <ul className="border-t border-border">
+                  {notes.map((i) => (
+                    <li key={i.id} className="grid grid-cols-[40px_minmax(0,180px)_minmax(0,1fr)] items-start gap-x-3 border-b border-border px-2 py-2">
+                      <span className="inline-flex size-8 items-center justify-center rounded text-sm" style={heat(i.score)}>
+                        {i.score}
+                      </span>
+                      <span className="truncate pt-1">{nameOf(i.memberId)}</span>
+                      <span className="whitespace-pre-wrap pt-1 text-text2">{i.note}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          ))}
         </div>
       </section>
 
