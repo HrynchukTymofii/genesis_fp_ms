@@ -21,6 +21,7 @@ Next.js 16 (App Router, Server Actions, `proxy.ts`) · Tailwind CSS 4 · Postgre
 | `LEAD_MEMBER_NAME` | yes | Exact name of the team lead, e.g. `Тимофій Гринчук` |
 | `TEAM_PASSCODE` | no | If set, everyone enters it once at `/unlock` |
 | `BLOB_READ_WRITE_TOKEN` | no | Enables "Прикріпити файл" on tasks and resources (10 MB max) |
+| `LIVEBLOCKS_SECRET_KEY` | no | Live shared editing of meeting notes, task bodies and direction notes (merged edits + live cursors). Without it, the last save wins. Read at build time, so redeploy after adding it. |
 
 ## Deploy to Vercel
 

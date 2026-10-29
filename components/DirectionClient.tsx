@@ -6,6 +6,7 @@ import { saveDirectionNotes, setDirectionRoles } from "@/app/actions/directions"
 import { createTask } from "@/app/actions/tasks";
 import { useAppData } from "@/components/AppData";
 import { DocEditor } from "@/components/DocEditor";
+import { roomId } from "@/lib/collab";
 
 export function DirectionRoles({
   slug,
@@ -111,6 +112,7 @@ export function InlineAddTask({ slug }: { slug: string }) {
 export function DirectionNotes({ slug, notes }: { slug: string; notes: unknown }) {
   return (
     <DocEditor
+      room={roomId("direction", slug)}
       initialContent={notes}
       onSave={(doc) => saveDirectionNotes(slug, doc)}
       placeholder="Спільні нотатки напряму: джерела, рішення, чернетки. Наберіть «/» для блоків."

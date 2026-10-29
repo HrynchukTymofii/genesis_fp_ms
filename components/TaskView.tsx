@@ -15,6 +15,7 @@ import { relTime } from "@/lib/dates";
 import { TASK_STATUSES, TASK_STATUS_LABEL, type TaskStatus } from "@/lib/labels";
 import { useAppData } from "@/components/AppData";
 import { DocEditor } from "@/components/DocEditor";
+import { roomId } from "@/lib/collab";
 import { LinkList } from "@/components/LinkList";
 import { PropertyRow } from "@/components/Tag";
 import { useToast } from "@/components/Toast";
@@ -164,6 +165,7 @@ export function TaskView({
       <div className="pt-4">
         <DocEditor
           key={task.id}
+          room={roomId("task", task.id)}
           initialContent={task.body}
           onSave={(doc) => saveTaskBody(task.id, doc)}
           placeholder="Пишіть тут: нотатки, підсумки інтерв’ю, чернетки. Наберіть «/» для блоків."

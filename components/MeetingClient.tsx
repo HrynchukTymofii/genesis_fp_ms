@@ -12,11 +12,13 @@ import {
 } from "@/app/actions/meetings";
 import { MEETING_KINDS, MEETING_KIND_LABEL } from "@/lib/labels";
 import { DocEditor } from "@/components/DocEditor";
+import { roomId } from "@/lib/collab";
 
 export function MeetingNotes({ id, notes }: { id: number; notes: unknown }) {
   return (
     <DocEditor
       key={id}
+      room={roomId("meeting", id)}
       initialContent={notes}
       onSave={(doc) => saveMeetingNotes(id, doc)}
       placeholder="Нотатки зустрічі. Наберіть «/» для заголовків, списків, чекбоксів."
